@@ -29,26 +29,24 @@ def video_codec(file):
             video_codec = stream["codec_name"]
 
     return video_codec
-def convert_mkv_to_mp4(input_dir, output_dir, audio_track, encode_subtitles, subtitle_track=None, separate_subtitles=False):
+def convert_mkv_to_mp4(input_dir, output_dir, audio_track, separate_subtitles):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
     mkv_files = [file for file in os.listdir(input_dir) if file.endswith(".mkv")]
-
-    for filename in mkv_files:
-        mkv_file = os.path.join(input_dir, filename)
-        codec = video_codec(mkv_file)
-        mp4_file = os.path.join(output_dir, os.path.splitext(filename)[0] + ".mp4")
-        ffmpeg_command = ["ffmpeg", "-i", mkv_file, "-map", "0:v:0", "-map", f"0:a:{audio_track}"]
-        if not encode_subtitles:
+    if not separate_subtitles:
+        for filename in mkv_files:
+            mkv_file = os.path.join(input_dir, filename)
+            codec = video_codec(mkv_file)
+            mp4_file = os.path.join(output_dir, os.path.splitext(filename)[0] + ".mp4")
+            ffmpeg_command = ["ffmpeg", "-i", mkv_file, "-map", "0:v:0", "-map", f"0:a:{audio_track}"]
             if codec == 'h264':
                 ffmpeg_command.extend(["-c:v", "h264_nvenc", mp4_file])
             else:
-                ffmpeg_command.extend(["-c:v", "hevc_nvenc", mp4_file])
+                    ffmpeg_command.extend(["-c:v", "hevc_nvenc", mp4_file])
+            subprocess.run(ffmpeg_command, cwd=input_dir, check=True)
 
-    subprocess.run(ffmpeg_command, cwd=input_dir)
-
-    if encode_subtitles and separate_subtitles:
+    if separate_subtitles:
         for filename in mkv_files:
             mkv_file = os.path.join(input_dir, filename)
             mp4_file = os.path.join(output_dir, os.path.splitext(filename)[0] + ".mp4")
@@ -76,9 +74,8 @@ def convert_mkv_to_mp4(input_dir, output_dir, audio_track, encode_subtitles, sub
 input_dir = input("Enter the path to the input directory: ")
 output_dir = input("Enter the path to the output directory: ")
 audio_track = input("Enter the audio track number to use for all files: ")
-subtitle_track = None
 separate_subtitles = False
 separate_subtitles = input("Do you want to encode subtitles with seperate files (need to be in the input folder) ? (yes/no): ").lower() == 'yes'
 
 # Usage
-convert_mkv_to_mp4(input_dir, output_dir, audio_track, subtitle_track, separate_subtitles)
+convert_mkv_to_mp4(input_dir, output_dir, audio_track, separate_subtitles)
