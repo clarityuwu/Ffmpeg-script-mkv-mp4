@@ -2,6 +2,7 @@ import os
 import subprocess
 import json
 import glob
+import re
 def get_codec_and_audio_tracks(file):
     command = ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_streams", file]
     result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -51,6 +52,8 @@ def convert_mkv_to_mp4(input_dir, output_dir, audio_track, separate_subtitles):
             mkv_file = os.path.join(input_dir, filename)
             mp4_file = os.path.join(output_dir, os.path.splitext(filename)[0] + ".mp4")
             subtitle_files = glob.glob(os.path.join(input_dir, "*.[as][sr][st]"))
+            subtitle_files = sorted(subtitle_files, key=lambda x: int(re.search(r'(\d+)', x).group(1)) if re.search(r'(\d+)', x) else 0)
+            print(f"Processing file: {filename}") 
             print("Available subtitle files:")
             for i, subtitle_file in enumerate(subtitle_files, start=1):
                 print(f"{i}. {os.path.basename(subtitle_file)}")
