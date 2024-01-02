@@ -110,7 +110,7 @@ mkv_files = [file for file in os.listdir(input_dir) if file.endswith(".mkv")]
 first_mkv_file = os.path.join(input_dir, mkv_files[0])
 
 audio_tracks = get_audio_tracks(first_mkv_file)
-for i, track in enumerate(audio_tracks, start=1):
+for i, track in enumerate(audio_tracks, start=0):
     track_name = track.get('tags', {}).get('title', track['codec_name'])
     print(f"{i}. {track_name}")
 
