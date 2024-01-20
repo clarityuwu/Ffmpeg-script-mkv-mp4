@@ -58,12 +58,12 @@ def convert_mkv_to_mp4(input_dir, output_dir, audio_track, separate_subtitles, a
             else:
                 for i, subtitle_file in enumerate(subtitle_files, start=0):
                     print(f"{i}. {os.path.basename(subtitle_file)}")
-                subtitles_file = os.path.basename(subtitle_files[int(input("Enter the number of the subtitles file for this video: ")) - 1])
+                subtitles_file = os.path.basename(subtitle_files[int(input("Enter the number of the subtitles file for this video: "))])
                 if subtitles_file.endswith(".ass"):
                     ffmpeg_command.extend(["-vf", f"ass='{os.path.basename(subtitles_file)}'"])
                 else:
                     ffmpeg_command.extend(["-vf", f"subtitles='{os.path.basename(subtitles_file)}'"])
-
+                
         if embed_subtitles:
             ffmpeg_command.extend(["-vf", f"subtitles='{os.path.basename(mkv_file)}':si={chosen_subtitle}"])
 
