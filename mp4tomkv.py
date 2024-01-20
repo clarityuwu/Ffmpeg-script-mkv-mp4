@@ -48,13 +48,17 @@ def convert_mkv_to_mp4(input_dir, output_dir, audio_track, separate_subtitles, a
         if separate_subtitles:
             subtitle_files = glob.glob(os.path.join(input_dir, "**", "*.[as][sr][st]"), recursive=True)
             subtitle_files = sorted(subtitle_files, key=lambda x: int(re.search(r'(\d+)', x).group(1)) if re.search(r'(\d+)', x) else 0)
-            
+
             if auto_encode:
+                filters = []
                 for subtitles_file in subtitle_files:
                     if subtitles_file.endswith(".ass"):
-                        ffmpeg_command.extend(["-vf", f"ass='{os.path.basename(subtitles_file)}'"])
+                        filters.append(f"ass='{os.path.basename(subtitles_file)}'")
                     else:
-                        ffmpeg_command.extend(["-vf", f"subtitles='{os.path.basename(subtitles_file)}'"])
+                        filters.append(f"subtitles='{os.path.basename(subtitles_file)}'")
+                ffmpeg_command.extend(["-vf", ','.join(filters)])
+                print('subs', subtitle_files)
+                
             else:
                 for i, subtitle_file in enumerate(subtitle_files, start=0):
                     print(f"{i}. {os.path.basename(subtitle_file)}")
