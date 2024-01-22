@@ -27,18 +27,23 @@ def get_codec_and_audio_tracks(file):
 def video_codec(file):
     return get_codec_and_audio_tracks(file)[0]
 
+def extract_number(filename):
+    numbers = re.findall(r'\d+', filename)
+    return [int(number) for number in numbers]
+
 def convert_mkv_to_mp4(input_dir, output_dir, audio_track, separate_subtitles, auto_encode, embed_subtitles, chosen_subtitle):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    mkv_files = [file for file in os.listdir(input_dir) if file.endswith(".mkv")]
+    mkv_files = sorted([file for file in os.listdir(input_dir) if file.endswith(".mkv")], key=extract_number)
+    subtitle_files = glob.glob(os.path.join(input_dir, "**", "*.[as][sr][st]"), recursive=True)
+    subtitle_files = sorted(subtitle_files, key=extract_number)
 
-    for filename in mkv_files:
+    for i, filename in enumerate(mkv_files):
         mkv_file = os.path.join(input_dir, filename)
         mp4_file = os.path.join(output_dir, os.path.splitext(filename)[0] + ".mp4")
         codec, audio_codec = get_codec_and_audio_tracks(mkv_file)
         ffmpeg_command = ["ffmpeg", "-i", mkv_file, "-map", "0:v:0", "-map", f"0:a:{audio_track}"]
-        print('mkv_file: ', mkv_file)  
 
         if codec == 'h264':
             ffmpeg_command.extend(["-c:v", "h264_nvenc"])
@@ -46,27 +51,21 @@ def convert_mkv_to_mp4(input_dir, output_dir, audio_track, separate_subtitles, a
             ffmpeg_command.extend(["-c:v", "hevc_nvenc"])
 
         if separate_subtitles:
-            subtitle_files = glob.glob(os.path.join(input_dir, "**", "*.[as][sr][st]"), recursive=True)
-            subtitle_files = sorted(subtitle_files, key=lambda x: int(re.search(r'(\d+)', x).group(1)) if re.search(r'(\d+)', x) else 0)
-
-            if auto_encode:
-                filters = []
-                for subtitles_file in subtitle_files:
-                    if subtitles_file.endswith(".ass"):
-                        filters.append(f"ass='{os.path.basename(subtitles_file)}'")
-                    else:
-                        filters.append(f"subtitles='{os.path.basename(subtitles_file)}'")
-                ffmpeg_command.extend(["-vf", ','.join(filters)])
-                print('subs', subtitle_files)
-                
+            for i, subtitle_file in enumerate(subtitle_files, start=0):
+                print(f"{i}. {os.path.basename(subtitle_file)}")
+            subtitles_file = os.path.basename(subtitle_files[int(input("Entre le numéro de sous titres pour cette vidéo: "))])
+            if subtitles_file.endswith(".ass"):
+                ffmpeg_command.extend(["-vf", f"ass='{os.path.basename(subtitles_file)}'"])
             else:
-                for i, subtitle_file in enumerate(subtitle_files, start=0):
-                    print(f"{i}. {os.path.basename(subtitle_file)}")
-                subtitles_file = os.path.basename(subtitle_files[int(input("Enter the number of the subtitles file for this video: "))])
-                if subtitles_file.endswith(".ass"):
-                    ffmpeg_command.extend(["-vf", f"ass='{os.path.basename(subtitles_file)}'"])
-                else:
-                    ffmpeg_command.extend(["-vf", f"subtitles='{os.path.basename(subtitles_file)}'"])
+                ffmpeg_command.extend(["-vf", f"subtitles='{os.path.basename(subtitles_file)}'"])
+
+        if separate_subtitles and auto_encode:
+            subtitle_file = subtitle_files[i]
+            print("Subs files", subtitle_files)
+            if subtitle_file.endswith(".ass"):
+                ffmpeg_command.extend(["-vf", f"ass='{os.path.basename(subtitle_file)}'"])
+            else:
+                ffmpeg_command.extend(["-vf", f"subtitles='{os.path.basename(subtitle_file)}'"])
                 
         if embed_subtitles:
             ffmpeg_command.extend(["-vf", f"subtitles='{os.path.basename(mkv_file)}':si={chosen_subtitle}"])
