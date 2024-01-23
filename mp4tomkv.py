@@ -50,7 +50,7 @@ def convert_mkv_to_mp4(input_dir, output_dir, audio_track, separate_subtitles, a
         else:
             ffmpeg_command.extend(["-c:v", "hevc_nvenc"])
 
-        if separate_subtitles:
+        if separate_subtitles and not auto_encode:
             for i, subtitle_file in enumerate(subtitle_files, start=0):
                 print(f"{i}. {os.path.basename(subtitle_file)}")
             subtitles_file = os.path.basename(subtitle_files[int(input("Entre le numéro de sous titres pour cette vidéo: "))])
